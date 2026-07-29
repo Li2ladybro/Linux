@@ -1,0 +1,8 @@
+total 44
+drwxrwxr-x  2 lmf lmf  4096 Jul 29 10:11 .
+drwxrwxr-x 16 lmf lmf  4096 Jul 28 13:11 ..
+-rw-rw-r--  1 lmf lmf   293 Jul 29 10:11 2.txt
+-rw-rw-r--  1 lmf lmf     0 Jul 29 10:11 2.txt[D[D
+-rw-rw-r--  1 lmf lmf    69 Jul 28 23:14 makefile
+-rwxrwxr-x  1 lmf lmf 17352 Jul 29 10:08 myshell
+-rw-rw-r--  1 lmf lmf  6423 Jul 29 10:08 myshell.c

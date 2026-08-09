@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <unistd.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -59,6 +60,11 @@ public:
         return _name;
     }
 
+    const pid_t getsubEpId() const
+    {
+        return _subId;
+    }
+
     const int getsunEpWriteFd() const
     {
         return _writeFd;
@@ -76,8 +82,18 @@ int reccTask(const int readfd)
 {
     int code = 0;
     ssize_t s = read(readfd, &code, sizeof code);
-    assert(s == sizeof(int));
-    return code;
+    if (s == 4)
+    {
+        return code;
+    }
+    else if (s <= 0)
+    {
+        return -1;
+    }
+    else
+    {
+        return -1;
+    }
 }
 
 void sendTask(const subEp &process, int taskIdx)
@@ -89,6 +105,7 @@ void sendTask(const subEp &process, int taskIdx)
 
 void creatSubProcess(vector<subEp> *subs, vector<func_t> &funcMap)
 {
+    vector<int> deleteFd;
     for (int i = 0; i < PROCESS_NUM; ++i)
     {
         int fds[2];
@@ -96,6 +113,10 @@ void creatSubProcess(vector<subEp> *subs, vector<func_t> &funcMap)
         pid_t id = fork();
         if (id == 0)
         {
+            for(int i=0;i<deleteFd.size();++i)
+            {
+                close(deleteFd[i]);
+            }
             // 子进程读
             close(fds[1]);
             while (true)
@@ -108,9 +129,9 @@ void creatSubProcess(vector<subEp> *subs, vector<func_t> &funcMap)
                 {
                     funcMap[commmandCode]();
                 }
-                else
+                else if (commmandCode == -1)
                 {
-                    cout << "sub recieive code error!\n";
+                    break;
                 }
             }
             exit(0);
@@ -119,6 +140,7 @@ void creatSubProcess(vector<subEp> *subs, vector<func_t> &funcMap)
         close(fds[0]);
         subEp sub(id, fds[1]);
         subs->push_back(sub);
+        deleteFd.push_back(sub.getsunEpWriteFd());
     }
 }
 
@@ -145,6 +167,21 @@ void loadBalanceCtr(const vector<func_t> &funcMap, const vector<subEp> &subs, in
             }
         }
     }
+    // write quit -> read 0
+    for (int i = 0; i < processNum; i++)
+    {
+        close(subs[i].getsunEpWriteFd());
+    }
+}
+
+void waitProcess(vector<subEp> &subs)
+{
+    int processNum = subs.size();
+    for (int i = 0; i < processNum; i++)
+    {
+        waitpid(subs[i].getsubEpId(), nullptr, 0);
+        cout << "wait sub process sucess ....：" << subs[i].getsubEpId() << endl;
+    }
 }
 
 int main()
@@ -152,13 +189,16 @@ int main()
     MAKESEED();
     vector<func_t> funcMap;
     loadTask(&funcMap);
-
     vector<subEp> subs;
+    
     // 1、创建子进程和管道
     creatSubProcess(&subs, funcMap);
+
     // 2、父进程控制子进程
-    int taskCnt = 5; // 0 则永久进行
+    int taskCnt = 3; // 0 则永久进行
     loadBalanceCtr(funcMap, subs, taskCnt);
+
     // 3、回收子进程
+    waitProcess(subs);
     return 0;
 }

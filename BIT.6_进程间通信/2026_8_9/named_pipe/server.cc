@@ -4,23 +4,29 @@
 int main()
 {
 
-    cout<<"server begin\n";
+    bool p = createFifo(NAMEDPIPE);
+    assert(p == true);
+
+    cout << "server begin\n";
     int rfd = open(NAMEDPIPE, O_RDONLY);
-    if(rfd==-1)
+    cout << "server end\n";
+
+    if (rfd == -1)
     {
-        cout<<"只读打卡文件失败\n";
+        cout << "只读打卡文件失败\n";
         exit(-1);
     }
-    cout<<"server end\n";
 
     assert(rfd != -1);
 
     // read
+    char buffer[1024];
+
     while (true)
     {
-        char buffer[1024];
-        ssize_t n = read(rfd, buffer, strlen(buffer));
-        if (n == strlen(buffer))
+
+        ssize_t n = read(rfd, buffer, sizeof(buffer));
+        if (n)
         {
             cout << "server->#：" << buffer << endl;
         }
@@ -32,6 +38,8 @@ int main()
     }
 
     close(rfd);
+
+    removeFifo(NAMEDPIPE);
 
     return 0;
 }

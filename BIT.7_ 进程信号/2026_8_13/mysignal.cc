@@ -8,7 +8,9 @@
 
 using namespace std;
 
-void handler(int num)
+int num = 1;
+
+void handler(int no)
 {
     cout << "我捕捉到了" << num << "号信号\n";
 }
@@ -20,48 +22,53 @@ void Usage(string proc)
 
 int main(int argc, char *argv[])
 {
-    // if (argc != 3)
-    // {
-    //     Usage(argv[0]);
-    //     exit(1);
-    // }
+    /*
+    if (argc != 3)
+    {
+        Usage(argv[0]);
+        exit(1);
+    }
 
-    // pid_t pid = atoi(argv[1]);
-    // int signo = atoi(argv[2]);
-    // if (kill(pid, signo) != 0)
-    // {
-    //     perror("kill:");
-    // }
+    pid_t pid = atoi(argv[1]);
+    int signo = atoi(argv[2]);
+    if (kill(pid, signo) != 0)
+    {
+        perror("kill:");
+    }
 
-    // 这里是signal函数的调用，并不是handler的调用
-    // 仅仅是设置了对2号信号的捕捉方法，并不代表该方法被调用了
-    // 一般这个方法不会执行，除非收到对应的信号!
+    这里是signal函数的调用，并不是handler的调用
+    仅仅是设置了对2号信号的捕捉方法，并不代表该方法被调用了
+    一般这个方法不会执行，除非收到对应的信号!
 
-    // signal(2, handler);
+    signal(2, handler);
 
-    // while (true)
-    // {
-    //     cout << "hello i am " << getpid() << endl;
-    //     sleep(1);
-    // }
+    while (true)
+    {
+        cout << "hello i am " << getpid() << endl;
+        sleep(1);
+    }
+    */
 
-    // 2、系统调用向目标进程发送信号
-    // kill()可以想任意进程发送任意信号
-    // raise()给自己发送任意信号kill(getpid(),任意信号)
-    // abort()给自己发送指定的信号SIGABRT,kil1(getpid(),SIGABRT)
+    /*
+    2、系统调用向目标进程发送信号
+    kill()可以想任意进程发送任意信号
+    raise()给自己发送任意信号kill(getpid(),任意信号)
+    abort()给自己发送指定的信号SIGABRT,kil1(getpid(),SIGABRT)
 
-    // int cnu = 0;
-    // while (cnu < 10)
-    // {
-    //     cout << cnu++ << ":" << endl;
-    //     if (cnu > 5)
-    //     {
-    //         // The  raise()  function  sends  a  signal to the calling process or thread.
-    //         abort();  // kill(getpid(), SIGABRT)
-    //         raise(9); // kill(getpid(), signo)
-    //     }
-    // }
+    int cnu = 0;
+    while (cnu < 10)
+    {
+        cout << cnu++ << ":" << endl;
+        if (cnu > 5)
+        {
+            // The  raise()  function  sends  a  signal to the calling process or thread.
+            abort();  // kill(getpid(), SIGABRT)
+            raise(9); // kill(getpid(), signo)
+        }
+    }
+    */
 
+    /*
     // 3.产生信号的方式:硬件异常产生信号信号产生，不一定非得用户显示的发送!
     signal(SIGFPE, handler);
     int a = 10;
@@ -73,5 +80,19 @@ int main(int argc, char *argv[])
     // 所以每一次恢复的时候，就让OS识别到了CPU内部的溢出状态寄存器中的溢出标志位是1
     // OS如何得知应该给当前进程发送8号信号的--OS怎么知道我除0了呢??，CPU会异常
     a/= 0;//为什么除0会终止进程?当前进程会受到来自OS系统的信号(告知)，SIGFPE
+
+    */
+    alarm(1);
+    /*
+    while (true)
+    {
+        cout << "num:" << num++ << endl;
+    }
+    */
+
+    signal(SIGALRM, handler);
+    alarm(1);
+    while (num++)
+        ;
     return 0;
 }

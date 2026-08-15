@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
         perror("kill:");
     }
 
+    1、键盘
     这里是signal函数的调用，并不是handler的调用
     仅仅是设置了对2号信号的捕捉方法，并不代表该方法被调用了
     一般这个方法不会执行，除非收到对应的信号!
@@ -80,8 +81,9 @@ int main(int argc, char *argv[])
     // 所以每一次恢复的时候，就让OS识别到了CPU内部的溢出状态寄存器中的溢出标志位是1
     // OS如何得知应该给当前进程发送8号信号的--OS怎么知道我除0了呢??，CPU会异常
     a/= 0;//为什么除0会终止进程?当前进程会受到来自OS系统的信号(告知)，SIGFPE
-
     */
+
+    // 4、软件触发
     alarm(1);
     /*
     while (true)
@@ -92,7 +94,6 @@ int main(int argc, char *argv[])
 
     signal(SIGALRM, handler);
     alarm(1);
-    while (num++)
-        ;
+    while (num++);
     return 0;
 }

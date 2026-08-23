@@ -51,7 +51,7 @@
 #include <cassert>
 
 #include <iostream>
-
+// #include <pthread>
 #include <vector>
 
 #include <unistd.h>
@@ -73,6 +73,7 @@ public:
     char name[64];
 };
 
+// std::thread t1();
 // 1、可重入状态
 // 2、是可重入函数
 // 3、函数内定义的变量，都是独立的-》每一个线程都有自己的独立的栈结构
@@ -88,10 +89,11 @@ void *start_routine(void *argv)
     {
         cout << "I am thread " << ((ThreadData *)argv)->name << " cnt : " << cnt++ << endl;
         sleep(1);
-        ThreadReturn *ret = new ThreadReturn;
-        ret->exit_code = 2026;
-        ret->exit_result = 22;
-        pthread_exit((void *)ret);
+        // ThreadReturn *ret = new ThreadReturn;
+        // ret->exit_code = 2026;
+        // ret->exit_result = 22;
+        // pthread_exit((void *)ret);
+        return (void *)23;
         // return (void *)ret;
     }
 
@@ -112,7 +114,7 @@ int main()
     for (int i = 0; i < NUM; ++i)
     {
         ThreadData *thd = new ThreadData;
-        snprintf(thd->name, sizeof(thd->name), "%s:%d", "thread", i);
+        snprintf(thd->name, sizeof(thd->name), "%s : %d", "thread", i);
         pthread_create(&(thd->tid), nullptr, start_routine, (void *)thd);
         threads.push_back(thd);
         /* code */
@@ -127,13 +129,23 @@ int main()
         cout << "create thread " << e->name << " : " << e->tid << " success " << endl;
     }
 
+    for (int i = 0; i < threads.size() / 2; ++i)
+    {
+        // 线程可以被取消，注意：线程取消的前提是线程已经跑起来了
+        // 线程如果被取消，返回(void*)-1
+        pthread_cancel(threads[i]->tid);
+        cout << "pthread_cancel : " << threads[i]->name << " success \n";
+    }
+
     for (auto &e : threads)
     {
         void *ret = nullptr;
+        // pthread_join默认就会调用成功，是线程的等待函数，不需要接收异常信号，信号是进程该考虑的
         int n = pthread_join(e->tid, &ret);
         assert(n == 0);
-        cout << " join " << e->name << " success " << " exit_code : " << ((ThreadReturn *)ret)->exit_code << " exit_result : " << ((ThreadReturn *)ret)->exit_result << endl;
-        delete (ThreadReturn *)ret;
+        // cout << " join " << e->name << " success " << " exit_code : " << ((ThreadReturn *)ret)->exit_code << " exit_result : " << ((ThreadReturn *)ret)->exit_result << endl;
+        cout << " join " << e->name << " success " << " exit_code : " << (long long)ret << endl;
+        // delete (ThreadReturn *)ret;
         delete e;
     }
 

@@ -9,6 +9,9 @@
 
 using namespace std;
 
+// 添加__thread，可以将一个内置类型设为线程局部存储
+__thread int g_val=100;
+
 string changeTid(const pthread_t &thread_id)
 {
     char tid[128];
@@ -28,6 +31,8 @@ void *start_routine(void *argv)
     }
     return nullptr;
 }
+
+
 
 int main()
 {

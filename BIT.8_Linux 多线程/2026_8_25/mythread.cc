@@ -7,6 +7,19 @@
 
 // 共享资源，火车票
 
+// 定义一个全局锁
+// pthread_adaptive_mutex_initializer_np
+// 自适应互斥锁静态初始化宏
+
+// 如何看待锁
+// a. 锁，本身就是一个共享资源!全局的变量是要被保护的，锁是用来保护全局的资源的，锁本身也是全局资源，锁的安全谁来保护呢?
+// b. 如何理解加锁和解锁的本质如果我们想简单的使用，该如何进行封装设计
+// pthread_mutex_lock、pthread_mutex_unlock:加锁，解锁的的过程必须是安全的!加锁、解锁的过程其实是原子的!
+// c. 如果申请成功，就继续向后执行，如果申请暂时没有成功，执行流会阻塞在当前位置!
+// d. 谁持有锁就可以访问临界区
+
+pthread_mutex_t gLock = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP;
+
 int tickets = 1000;
 
 // 1.多个执行流进行安全访问的共享资源-临界资源
@@ -40,24 +53,28 @@ void *getTickets(void *argv)
         // 锁只保证线程互斥访问，没有规定，谁先跑
         // 锁是多个线程竞争的结果
 
-        pthread_mutex_lock(((ThreadData *)argv)->_pMutex);
+        // pthread_mutex_lock(((ThreadData *)argv)->_pMutex);
+        pthread_mutex_lock(&gLock);
+        pthread_mutex_lock(&gLock);
 
         if (tickets > 0)
         {
             usleep(12344);
             std::cout << ((ThreadData *)argv)->_threadName << " 正在抢票" << " : " << tickets-- << std::endl;
-            pthread_mutex_unlock(((ThreadData *)argv)->_pMutex);
+            // pthread_mutex_unlock(((ThreadData *)argv)->_pMutex);
+            pthread_mutex_unlock(&gLock);
         }
         else
         {
-            pthread_mutex_unlock(((ThreadData *)argv)->_pMutex);
+            // pthread_mutex_unlock(((ThreadData *)argv)->_pMutex);
+            pthread_mutex_unlock(&gLock);
 
             break;
         }
         // 在这里解锁可以吗？
         // pthread_mutex_unlock(((ThreadData *)argv)->_pMutex);
 
-        sleep(1); // 形成订单
+        // sleep(1); // 形成订单
     }
     return nullptr;
 }
@@ -79,6 +96,7 @@ int main()
 
 #define NUM 4
 
+    // 定义一个局部锁
     pthread_mutex_t lock;
     pthread_mutex_init(&lock, nullptr);
     std::vector<pthread_t> tids(NUM);

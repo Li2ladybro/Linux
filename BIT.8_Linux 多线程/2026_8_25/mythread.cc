@@ -8,8 +8,8 @@
 // 共享资源，火车票
 
 // 定义一个全局锁
-// pthread_adaptive_mutex_initializer_np
-// 自适应互斥锁静态初始化宏
+// pthread_mutex_initializer
+// 静态初始化互斥锁宏
 
 // 如何看待锁
 // a. 锁，本身就是一个共享资源!全局的变量是要被保护的，锁是用来保护全局的资源的，锁本身也是全局资源，锁的安全谁来保护呢?
@@ -18,7 +18,7 @@
 // c. 如果申请成功，就继续向后执行，如果申请暂时没有成功，执行流会阻塞在当前位置!
 // d. 谁持有锁就可以访问临界区
 
-pthread_mutex_t gLock = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP;
+pthread_mutex_t gLock = PTHREAD_MUTEX_INITIALIZER;;
 
 int tickets = 1000;
 

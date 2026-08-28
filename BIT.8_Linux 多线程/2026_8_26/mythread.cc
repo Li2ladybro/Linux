@@ -8,7 +8,7 @@
 int tickets = 1000;
 
 // 定义一个全局锁
-pthread_mutex_t gLock = PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP;
+pthread_mutex_t gLock = PTHREAD_MUTEX_INITIALIZER;
 
 class ThreadData
 {
@@ -64,7 +64,6 @@ int main()
     {
         pthread_join(e, nullptr);
     }
-
 
     return 0;
 }

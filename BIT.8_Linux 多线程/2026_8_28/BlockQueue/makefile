@@ -3,4 +3,4 @@ main:main.cc
 
 .PHONY:clean
 clean:
-	rm -f main
+	rm -f main log.txt

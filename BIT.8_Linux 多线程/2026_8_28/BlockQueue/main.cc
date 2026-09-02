@@ -30,7 +30,7 @@ void *producer_start_routine(void *_bqs)
 
         bq->push(t);
         std::cout << "producor thread 生产计算任务: " << t.toTaskString() << std::endl;
-         sleep(1);
+        sleep(1);
     }
     return nullptr;
 }
@@ -85,23 +85,23 @@ int main()
 
     pthread_t consumer[5], producer[5]; // 生产消费者任务线程
 
-    for (int i = 0; i < 5;++i)
+    for (int i = 0; i < 5; ++i)
     {
 
-        pthread_create(consumer+i, nullptr, consumer_start_routine, (void *)bqs);
+        pthread_create(consumer + i, nullptr, consumer_start_routine, (void *)bqs);
     }
-    for(int i=0;i<5;++i)
+    for (int i = 0; i < 5; ++i)
     {
-    pthread_create(producer+i, nullptr, producer_start_routine, (void *)bqs);
+        pthread_create(producer + i, nullptr, producer_start_routine, (void *)bqs);
     }
 
     pthread_t save_thread; // 保存线程
     pthread_create(&save_thread, nullptr, save_task_start_routine, (void *)bqs);
 
-    for(int i=0;i<5;++i)
+    for (int i = 0; i < 5; ++i)
     {
-    pthread_join(consumer[i], nullptr);
-    pthread_join(producer[i], nullptr);
+        pthread_join(consumer[i], nullptr);
+        pthread_join(producer[i], nullptr);
     }
     pthread_join(save_thread, nullptr);
 

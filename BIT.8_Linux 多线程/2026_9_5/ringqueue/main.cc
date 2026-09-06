@@ -29,6 +29,7 @@ void *ProducerStartRoutine(void *rq)
         int y = rand() % 5;
         char op = oper[rand() % oper.size()];
         Task t(x, y, op, myop);
+
         // 生产任务
         ringqueue->Push(t);
 
@@ -57,7 +58,6 @@ void *ConsumerStartRoutine(void *rq)
         ringqueue->Pop(&t);
 
         // 消费任务
-
         std::string result = t();
 
         // 输出提示
@@ -78,6 +78,13 @@ int main()
 
     std::vector<pthread_t> consumer(5), producer(8); // 两类角色
 
+    // 多生产多消费，需要同步锁和互斥锁
+    // 生产者与生产者互斥（多个生产者不可以同时往队列中放数据）：需要生产者互斥锁
+    // 消费者与消费者互斥（多个消费者不可以同时往队列中拿数据）：需要消费者互斥锁
+    // 生产者与消费者的互斥同步关系（队列为空此时只能生产者工作，队列满只能此时只能消费者工作）：需要同步锁
+
+    // 意义在哪里：生产者构建或者是消费者获取任务处理任务--是需要花费时间的
+
     for (auto &e : producer)
     {
         assert(pthread_create(&e, nullptr, ProducerStartRoutine, (void *)rq) == 0);
@@ -88,7 +95,11 @@ int main()
         assert(pthread_create(&e, nullptr, ConsumerStartRoutine, (void *)rq) == 0);
     }
 
-    // 单生产单消费
+    // 单生产单消费，只需要一把同步锁就可以保证消费者与生产者的互斥关系
+    // 生产者与生产者
+    // 消费者与消费者
+    // 生产者与消费者的互斥同步关系：只体现在队列为空或者满，此时的同步锁就可以使得两者互斥的访问资源
+
     // pthread_create(&producer, nullptr, ProducerStartRoutine, (void *)rq);
 
     // pthread_create(&consumer, nullptr, ConsumerStartRoutine, (void *)rq);

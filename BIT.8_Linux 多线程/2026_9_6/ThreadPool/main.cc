@@ -21,8 +21,6 @@ int main()
 {
   // 一堆代码。。。
 
-
-
   // ThreadNs::Thread t1(run,(void*)"thread 1 run...");
   // ThreadNs::Thread t2(run,(void*)"thread 2 run...");
   // t1.start();

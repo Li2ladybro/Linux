@@ -35,7 +35,6 @@ private:
     pthread_mutex_t *_pLock; // 锁指针
 };
 
-
 // 锁护卫
 class LockGuard
 {

@@ -13,7 +13,7 @@
 
 using namespace ThreadNs;
 
-const int gnum = 1000;
+const int gnum = 100;
 
 template <class T>
 class ThreadPool;
@@ -46,7 +46,7 @@ private:
             // sleep(1);
             // std::cout << "headlerTask thread " << pthread_self() << " run...\n";
             {
-                LockGuard lockguard(td->_threadpool->mutex());
+                LockGuard lockguard(td->_threadpool->GetThreadPoolMutex());
                 // td->_threadpool->lockQueue();
                 while (td->_threadpool->isQueueEmpty())
                 {
@@ -66,8 +66,8 @@ private:
     ThreadPool(const int &num = gnum)
         : _num(num)
     {
-        pthread_mutex_init(&_mutex, nullptr);
-        pthread_cond_init(&_cond, nullptr);
+        pthread_mutex_init(&_threaPoolMutex, nullptr);
+        pthread_cond_init(&_threadPoolCond, nullptr);
         for (int i = 0; i < _num; ++i)
         {
             _threads.push_back(new Thread());
@@ -80,12 +80,12 @@ private:
 public:
     void lockQueue()
     {
-        pthread_mutex_lock(&_mutex);
+        pthread_mutex_lock(&_threaPoolMutex);
     }
 
     void unlockQueue()
     {
-        pthread_mutex_unlock(&_mutex);
+        pthread_mutex_unlock(&_threaPoolMutex);
     }
 
     bool isQueueEmpty()
@@ -95,7 +95,7 @@ public:
 
     void threadWait()
     {
-        pthread_cond_wait(&_cond, &_mutex);
+        pthread_cond_wait(&_threadPoolCond, &_threaPoolMutex);
     }
 
     T pop()
@@ -105,9 +105,9 @@ public:
         return t;
     }
 
-    pthread_mutex_t *mutex()
+    pthread_mutex_t *GetThreadPoolMutex()
     {
-        return &_mutex;
+        return &_threaPoolMutex;
     }
 
 public:
@@ -123,10 +123,10 @@ public:
 
     void push(const T &in)
     {
-        LockGuard lockguard(&_mutex);
+        LockGuard lockguard(&_threaPoolMutex);
         // pthread_mutex_lock(&_mutex);
         _task_queue.push(in);
-        pthread_cond_signal(&_cond);
+        pthread_cond_signal(&_threadPoolCond);
         // pthread_mutex_unlock(&_mutex);
     }
 
@@ -146,8 +146,8 @@ public:
 
     ~ThreadPool()
     {
-        pthread_cond_destroy(&_cond);
-        pthread_mutex_destroy(&_mutex);
+        pthread_cond_destroy(&_threadPoolCond);
+        pthread_mutex_destroy(&_threaPoolMutex);
         for (auto &e : _threads)
         {
             delete e;
@@ -160,8 +160,8 @@ private:
     std::vector<Thread *> _threads; // 线程池
     std::queue<T> _task_queue;      // 任务队列
 
-    pthread_mutex_t _mutex;
-    pthread_cond_t _cond;
+    pthread_mutex_t _threaPoolMutex; // 线程互斥锁
+    pthread_cond_t _threadPoolCond;
 
     static ThreadPool<T> *_tp; // 类对象
     static std::mutex _tplock; // 保护类对象

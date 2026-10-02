@@ -5,7 +5,9 @@ using namespace Client;
 
 static void Usage(string proc)
 {
-    cout << "\nUsage:\n\t" << proc << " server_ip server_port\n\n";
+    fprintf(stderr, "\nUsage:\n\t%s server_ip server_port\n\n", proc.c_str());
+    fflush(stderr);
+    // cout << "\nUsage:\n\t" << proc << " server_ip server_port\n\n";
 }
 
 // ./udpClint server_ip server_port

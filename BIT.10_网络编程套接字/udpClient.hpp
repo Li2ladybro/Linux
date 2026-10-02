@@ -46,8 +46,30 @@ namespace Client
             cout << "socket success" << ":" << _sockfd << endl;
         }
 
+        static void *readServerResponse(void *args)
+        {
+            pthread_detach(pthread_self());
+            while (true)
+            {
+                char buffer[1024];
+                // struct sockaddr_in peer;
+                // socklen_t len = sizeof peer;
+
+                // ssize_t s = recvfrom(*(int *)args, buffer, sizeof buffer - 1, 0, (sockaddr *)&peer, &len);
+                ssize_t s = recvfrom(*(int *)args, buffer, sizeof buffer - 1, 0, nullptr, nullptr);
+
+                if (s >= 0)
+                {
+                    buffer[s] = 0;
+                    cout << buffer << endl;
+                }
+            }
+            return nullptr;
+        }
+
         void run()
         {
+            pthread_create(&_read, nullptr, readServerResponse, (void *)&_sockfd);
             // 目标地址
             struct sockaddr_in server;
             memset(&server, 0, sizeof server);
@@ -57,11 +79,17 @@ namespace Client
             server.sin_port = htons(_serverport);
 
             string messages;
+            char buffer[1024];
+
             while (!_quit)
             {
-                cout << "Please Enter# ";
-                cin >> messages;
+                fprintf(stderr, "Enter# ");
+                fflush(stderr);
+                fgets(buffer, sizeof buffer, stdin);
 
+                // cin >> messages;
+                buffer[strlen(buffer) - 1] = 0;
+                messages = buffer;
                 // 首次发送数据的时候绑定
                 sendto(_sockfd, messages.c_str(), messages.size(), 0, (struct sockaddr *)&server, sizeof server);
             }
@@ -78,5 +106,7 @@ namespace Client
 
         bool _quit;
         int _sockfd; // socket文件描述符
+
+        pthread_t _read;
     };
 }

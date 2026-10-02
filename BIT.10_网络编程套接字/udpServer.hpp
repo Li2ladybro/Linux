@@ -24,13 +24,13 @@ namespace Server
         BIND_ERR
     };
 
-    typedef function<void(string, uint16_t, string)> func_t;
+    typedef function<void(int, string, uint16_t, string)> func_t;
 
     class udpServer
     {
     public:
         udpServer(const func_t &callback, const u_int16_t &port, const string &ip = _defaultIp)
-            : _port(port), _ip(ip), _sockfd(-1)
+            : _port(port), _ip(ip), _sockfd(-1), _callback(callback)
         {
         }
 
@@ -89,7 +89,7 @@ namespace Server
 
                     cout << clientip << "[" << clientport << "]# " << message << endl;
                     // 读上来就结束了吗
-                    _callback(clientip, clientport, message);
+                    _callback(_sockfd, clientip, clientport, message);
                 }
                 sleep(1);
             }

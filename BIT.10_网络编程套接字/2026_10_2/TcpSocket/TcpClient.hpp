@@ -23,10 +23,10 @@ namespace Client
         BIND_ERR
     };
 
-    class udpClient
+    class TcpClient
     {
     public:
-        udpClient(const string &serverip, const uint16_t &serverport)
+        TcpClient(const string &serverip, const uint16_t &serverport)
             : _serverip(serverip), _serverport(serverport), _sockfd(-1), _quit(false)
         {
         }
@@ -95,7 +95,7 @@ namespace Client
             }
         }
 
-        ~udpClient()
+        ~TcpClient()
         {
         }
 

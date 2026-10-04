@@ -10,6 +10,8 @@
 
 #include <cerrno>
 #include <cstring>
+
+#include <sys/wait.h>
 #include <unistd.h>
 #include <strings.h>
 #include <functional>
@@ -47,7 +49,7 @@ namespace Server
                 logMessage(FATAL, "Create Socket Error");
                 exit(SOCKET_ERR);
             }
-            logMessage(NORMAL, "Create Socket Success");
+            logMessage(NORMAL, "Create Socket Success _listenSockfd：" + to_string(_listenSockfd));
             // cout << "socket success" << ":" << _sockfd << endl;
 
             // 2、绑定套接字(port,ip)重要的是绑定port
@@ -91,11 +93,14 @@ namespace Server
 
             for (;;)
             {
+                signal(SIGCHLD, SIG_IGN);
+                
                 // 4、server 获取新连接
                 // sock 是需要和 Client 进行通信的fd
                 struct sockaddr_in peer;
                 socklen_t len = sizeof peer;
 
+                // 获取新链接
                 int sock = accept(_listenSockfd, (struct sockaddr *)&peer, &len);
 
                 if (sock == -1)
@@ -111,8 +116,45 @@ namespace Server
                 // 提供服务
 
                 // demo1
-                serviceIO(sock);
-                close(sock);// 对于已经使用完毕的 fd 需要关闭，否则会导致文件描述符泄露
+                // serviceIO(sock);
+                // close(sock);// 对于已经使用完毕的 fd 需要关闭，否则会导致文件描述符泄露
+
+                // // demo2 多进程（1）
+                // pid_t id = fork();
+                // if (id == 0)
+                // {
+                //     // 子进程
+                //     close(_listenSockfd);
+                //     if (fork() > 0)
+                //     {
+                //         exit(0);
+                //     }
+                //     else
+                //     {
+                //         // 孤儿进程
+                //         serviceIO(sock);
+                //         close(sock);
+                //         exit(0);
+                //     }
+                // }
+                // // 父进程
+                // pid_t ret = waitpid(id, nullptr, 0);
+                // if (ret == id)
+                // {
+                //     cout << "Wait Success" << ret << endl;
+                // }
+
+                // demo2 多进程（2）
+                pid_t id = fork();
+                if (id == 0)
+                {
+                    // 子进程
+                    close(_listenSockfd);
+                    serviceIO(sock);
+                    close(sock);
+                    exit(0);
+                }
+                close(sock);
             }
         }
 
@@ -130,10 +172,10 @@ namespace Server
                     outBuffer += "server[echo]";
                     write(sock, outBuffer.c_str(), outBuffer.size());
                 }
-                else if(n==0)
+                else if (n == 0)
                 {
                     // 代表Client退出
-                    logMessage(NORMAL,"CLient Quit,Me Too");
+                    logMessage(NORMAL, "CLient Quit,Me Too!");
                     break;
                 }
             }

@@ -9,6 +9,7 @@
 
 #include <cerrno>
 #include <cstring>
+
 #include <unistd.h>
 #include <strings.h>
 
@@ -27,49 +28,32 @@ namespace Client
     {
     public:
         TcpClient(const string &serverip, const uint16_t &serverport)
-            : _serverip(serverip), _serverport(serverport), _sockfd(-1), _quit(false)
+            : _serverip(serverip), _serverport(serverport), _sockfd(-1)
         {
         }
 
         void initClient()
         {
             // 1、创建套接字，得到一份缓冲区
-            _sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+            _sockfd = socket(AF_INET, SOCK_STREAM, 0);
             if (-1 == _sockfd)
             {
-                cerr << "Socket Error: " << errno << ": " << strerror(errno) << endl;
+                cout << " Socket Create Error\n";
+                // cerr << "Socket Error: " << errno << ": " << strerror(errno) << endl;
                 exit(SOCKET_ERR);
             }
 
-            // 2、客户端需不需要bind[必须要]，客户端不需要显示bind，由os绑
+            // 2、Tcp客户端需不需要bind[必须要]，客户端不需要显示bind，由os绑
             // 写服务器的是一家公司。写客户端的是无数家 -- OS在什么时候，如何bind
-            cout << "socket success" << ":" << _sockfd << endl;
+            cout << "socket success" << "：" << _sockfd << endl;
+            // 3、要不要 listen?不要
+            // 4、要不要 accept?不要
+            // 5、要什么呢？？发起链接
         }
 
-        static void *readServerResponse(void *args)
+        void start()
         {
-            pthread_detach(pthread_self());
-            while (true)
-            {
-                char buffer[1024];
-                // struct sockaddr_in peer;
-                // socklen_t len = sizeof peer;
-
-                // ssize_t s = recvfrom(*(int *)args, buffer, sizeof buffer - 1, 0, (sockaddr *)&peer, &len);
-                ssize_t s = recvfrom(*(int *)args, buffer, sizeof buffer - 1, 0, nullptr, nullptr);
-
-                if (s >= 0)
-                {
-                    buffer[s] = 0;
-                    cout << buffer << endl;
-                }
-            }
-            return nullptr;
-        }
-
-        void run()
-        {
-            pthread_create(&_read, nullptr, readServerResponse, (void *)&_sockfd);
+            // pthread_create(&_read, nullptr, readServerResponse, (void *)&_sockfd);
             // 目标地址
             struct sockaddr_in server;
             memset(&server, 0, sizeof server);
@@ -78,35 +62,48 @@ namespace Client
             server.sin_addr.s_addr = inet_addr(_serverip.c_str());
             server.sin_port = htons(_serverport);
 
-            string messages;
-            char buffer[1024];
-
-            while (!_quit)
+            if (-1 == connect(_sockfd, (struct sockaddr *)&server, sizeof server))
             {
-                fprintf(stderr, "Enter# ");
-                fflush(stderr);
-                fgets(buffer, sizeof buffer, stdin);
+                cout << " Socket Connect Error\n";
+            }
+            else
+            {
+                string message;
+                char buffer[1024];
+                cout<<"Client _sockfd: "+to_string(_sockfd)<<endl;
+                while (true)
+                {
+                    cout << "Please Enter# ";
+                    getline(cin, message);
 
-                // cin >> messages;
-                buffer[strlen(buffer) - 1] = 0;
-                messages = buffer;
-                // 首次发送数据的时候绑定
-                sendto(_sockfd, messages.c_str(), messages.size(), 0, (struct sockaddr *)&server, sizeof server);
+                    write(_sockfd, message.c_str(), message.size());
+
+                    int n = read(_sockfd, buffer, sizeof buffer - 1);
+                    if (n > 0)
+                    {
+                        buffer[n] = 0;
+                        cout << "Server 回显# " << buffer << endl;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
         }
 
         ~TcpClient()
         {
+            if(_sockfd>=0)
+            {
+                close(_sockfd);
+            }
         }
 
     private:
         // 标识唯一的进程
         string _serverip;     // 目标服务器ip
         uint16_t _serverport; // 目标服务器端口
-
-        bool _quit;
-        int _sockfd; // socket文件描述符
-
-        pthread_t _read;
+        int _sockfd;          // socket文件描述符
     };
 }

@@ -1,8 +1,12 @@
 #pragma once
 
-#include "log.hpp"
+#include "Log.hpp"
+#include "ThreadPool.hpp"
+#include "Task.hpp"
+
 #include <iostream>
 #include <string>
+#include <functional>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -14,13 +18,20 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <strings.h>
-#include <functional>
+#include <pthread.h>
 
 namespace Server
 {
+
     using namespace std;
     static const uint16_t gport = 8080;
     static const int gbacklog = 5;
+    class TcpServer;
+    struct ThreadData
+    {
+        TcpServer *_self;
+        int _sock;
+    };
 
     enum
     {
@@ -49,7 +60,7 @@ namespace Server
                 logMessage(FATAL, "Create Socket Error");
                 exit(SOCKET_ERR);
             }
-            logMessage(NORMAL, "Create Socket Success _listenSockfd：" + to_string(_listenSockfd));
+            logMessage(NORMAL, "Create Socket Success _listenSockfd: %d", _listenSockfd);
             // cout << "socket success" << ":" << _sockfd << endl;
 
             // 2、绑定套接字(port,ip)重要的是绑定port
@@ -91,10 +102,13 @@ namespace Server
             // 服务器的本质是一个常驻内存的进程死循环
             // 例如：操作系统
 
+            // 4、线程池初始化
+            ThreadPool<Task>::getInstance()->run();
+            logMessage(NORMAL, "Thread Pool Inint Success");
             for (;;)
             {
-                signal(SIGCHLD, SIG_IGN);
-                
+                // signal(SIGCHLD, SIG_IGN);
+
                 // 4、server 获取新连接
                 // sock 是需要和 Client 进行通信的fd
                 struct sockaddr_in peer;
@@ -109,8 +123,8 @@ namespace Server
                     continue;
                 }
 
-                logMessage(NORMAL, "Accept A New Link Success");
-                cout << sock << endl;
+                logMessage(NORMAL, "Accept A New Link Success Get A New Sock : %d", sock);
+                // cout << sock << endl;
 
                 // 5、这里就是一个 sock，未来通信就用这个 sock，Tcp面向字节流的，后续全部是文件（I/O操作）
                 // 提供服务
@@ -145,41 +159,40 @@ namespace Server
                 // }
 
                 // demo2 多进程（2）
-                pid_t id = fork();
-                if (id == 0)
-                {
-                    // 子进程
-                    close(_listenSockfd);
-                    serviceIO(sock);
-                    close(sock);
-                    exit(0);
-                }
-                close(sock);
+                // pid_t id = fork();
+                // if (id == 0)
+                // {
+                //     // 子进程
+                //     close(_listenSockfd);
+                //     serviceIO(sock);
+                //     close(sock);
+                //     exit(0);
+                // }
+                // close(sock);
+
+                // demo3 多线程
+                // pthread_t tid;
+                // struct ThreadData *td = new ThreadData();
+                // td->_self = this;
+                // td->_sock = sock;
+                // pthread_create(&tid, nullptr, thread_Routine, (void *)td);
+
+                // pthread_join(tid,nullptr);
+
+                // demo4 线程池
+                ThreadPool<Task>::getInstance()->push(Task(sock, serviceIO));
             }
         }
 
-        void serviceIO(int sock)
-        {
-            char buffer[1024];
-            while (true)
-            {
-                ssize_t n = read(sock, buffer, sizeof buffer - 1);
-                if (n > 0)
-                {
-                    buffer[n] = 0;
-                    cout << "Receive Message# " << buffer << endl;
-                    string outBuffer = buffer;
-                    outBuffer += "server[echo]";
-                    write(sock, outBuffer.c_str(), outBuffer.size());
-                }
-                else if (n == 0)
-                {
-                    // 代表Client退出
-                    logMessage(NORMAL, "CLient Quit,Me Too!");
-                    break;
-                }
-            }
-        }
+        // static void *thread_Routine(void *args)
+        // {
+        //     pthread_detach(pthread_self());
+        //     (((struct ThreadData *)args)->_self)->serviceIO(((struct ThreadData *)args)->_sock);
+
+        //     close(((struct ThreadData *)args)->_sock);
+        //     delete (void *)args;
+        //     return nullptr;
+        // }
 
         ~TcpServer()
         {

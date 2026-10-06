@@ -11,4 +11,4 @@ TcpServer:TcpServer.cc
 	$(cc) -o $@ $^
 
 clean:
-	rm -f TcpServer TcpClient
+	rm -f TcpServer TcpClient log.normal log.error

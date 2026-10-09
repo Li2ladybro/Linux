@@ -67,7 +67,7 @@ namespace Client
             return nullptr;
         }
 
-        void run()
+        void start()
         {
             pthread_create(&_read, nullptr, readServerResponse, (void *)&_sockfd);
             // 目标地址

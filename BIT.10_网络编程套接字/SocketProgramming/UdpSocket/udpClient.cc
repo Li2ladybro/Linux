@@ -24,6 +24,6 @@ int main(int argc, char *argv[])
     uint16_t serverport = atoi(argv[2]);
     unique_ptr<TcpClient> ucli(new TcpClient(serverip, serverport));
     ucli->initClient();
-    ucli->run();
+    ucli->start();
     return 0;
 }

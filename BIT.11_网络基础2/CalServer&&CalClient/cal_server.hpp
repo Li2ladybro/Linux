@@ -1,6 +1,7 @@
 #pragma once
 
 #include "log.hpp"
+#include "protocol.hpp"
 
 #include <iostream>
 #include <string>
@@ -16,20 +17,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <strings.h>
-#include <pthread.h>
 
 namespace Server
 {
 
     using namespace std;
-    static const uint16_t gport = 8080;
-    static const int gbacklog = 5;
-    class TcpServer;
-    struct ThreadData
-    {
-        TcpServer *_self;
-        int _sock;
-    };
 
     enum
     {
@@ -39,7 +31,41 @@ namespace Server
         LISTEN_ERR
     };
 
-    typedef function<void(int, string, uint16_t, string)> func_t;
+    static const uint16_t gport = 8080;
+    static const int gbacklog = 5;
+
+    // const Request &：输入型，Response &：输出型
+    typedef function<bool(const Request &req, Response &resp)> func_t;
+
+    // 保证解耦
+    void HandleEnter(int sock, func_t func)
+    {
+        // 1、读取
+        // 1.1、你怎麽保证你读到的消息是【一个】完整的请求
+
+        string req_str;
+
+        // 2、反序列化
+        // 2.1、得到一个结构化的请求对象
+        Request req;
+
+        if (req.deserialize(req_str) == false)
+        {
+            return;
+        }
+
+        // 3、计算机处理，这块是真的业务逻辑
+        // 3.1、得到一个结构化的响应
+        Response resp;
+        func(req, resp);
+
+        // 4、对响应 Response，进行序列化
+        // 4.1、得到一个字符串
+        string resp_str;
+        resp.serialize(&resp_str);
+
+        // 5、发送响应结果
+    }
 
     class TcpServer
     {
@@ -95,7 +121,7 @@ namespace Server
             // UDP Server的预备工作完成
         }
 
-        void start()
+        void start(func_t func)
         {
             // 服务器的本质是一个常驻内存的进程死循环
             // 例如：操作系统
@@ -118,39 +144,6 @@ namespace Server
                 }
 
                 logMessage(NORMAL, "Accept A New Link Success Get A New Sock : %d", sock);
-                // cout << sock << endl;
-
-                // 5、这里就是一个 sock，未来通信就用这个 sock，Tcp面向字节流的，后续全部是文件（I/O操作）
-                // 提供服务
-
-                // demo1
-                // serviceIO(sock);
-                // close(sock);// 对于已经使用完毕的 fd 需要关闭，否则会导致文件描述符泄露
-
-                // // demo2 多进程（1）
-                // pid_t id = fork();
-                // if (id == 0)
-                // {
-                //     // 子进程
-                //     close(_listenSockfd);
-                //     if (fork() > 0)
-                //     {
-                //         exit(0);
-                //     }
-                //     else
-                //     {
-                //         // 孤儿进程
-                //         serviceIO(sock);
-                //         close(sock);
-                //         exit(0);
-                //     }
-                // }
-                // // 父进程
-                // pid_t ret = waitpid(id, nullptr, 0);
-                // if (ret == id)
-                // {
-                //     cout << "Wait Success" << ret << endl;
-                // }
 
                 // demo2 多进程（2）
                 pid_t id = fork();
@@ -158,7 +151,7 @@ namespace Server
                 {
                     // 子进程
                     close(_listenSockfd);
-                    serviceIO(sock);
+                    HandleEnter(sock, func);
                     close(sock);
                     exit(0);
                 }
@@ -168,33 +161,9 @@ namespace Server
                 if (ret > 0)
                 {
                     logMessage(NORMAL, "Wait Success");
-
-                    // cout << "Wait Success" << ret << endl;
                 }
-
-                // demo3 多线程
-                // pthread_t tid;
-                // struct ThreadData *td = new ThreadData();
-                // td->_self = this;
-                // td->_sock = sock;
-                // pthread_create(&tid, nullptr, thread_Routine, (void *)td);
-
-                // pthread_join(tid,nullptr);
-
-                // demo4 线程池
-                // ThreadPool<Task>::getInstance()->push(Task(sock, serviceIO));
             }
         }
-
-        // static void *thread_Routine(void *args)
-        // {
-        //     pthread_detach(pthread_self());
-        //     (((struct ThreadData *)args)->_self)->serviceIO(((struct ThreadData *)args)->_sock);
-
-        //     close(((struct ThreadData *)args)->_sock);
-        //     delete (void *)args;
-        //     return nullptr;
-        // }
 
         ~TcpServer()
         {
@@ -205,7 +174,5 @@ namespace Server
         uint16_t _port;
 
         int _listenSockfd; // 不是用来通信的，只负责监听是否有新连接到来，并获取，相当于拉客的
-
-        func_t _callback; // 收到数据怎么处理
     };
 }

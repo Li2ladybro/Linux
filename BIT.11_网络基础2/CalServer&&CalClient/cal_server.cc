@@ -15,7 +15,7 @@ static void Usage(string proc)
 bool cal(const Request &req, Response &resp)
 {
     resp._exit_code = OK;
-    resp._result = 0;
+    resp._result = OK;
     switch (req._op)
     {
 
@@ -36,8 +36,10 @@ bool cal(const Request &req, Response &resp)
         {
             resp._exit_code = DIVZERO;
         }
-
-        resp._result = req._x / req._y;
+        else
+        {
+            resp._result = req._x / req._y;
+        }
         break;
 
     case '%':
@@ -45,9 +47,12 @@ bool cal(const Request &req, Response &resp)
         {
             resp._exit_code = MODZERO;
         }
-        resp._result = req._x / req._y;
-
+        else
+        {
+            resp._result = req._x / req._y;
+        }
         break;
+
     default:
         resp._exit_code = OPERROR;
     }
@@ -64,7 +69,7 @@ int main(int argc, char *argv[])
     }
     uint16_t port = atoi(argv[1]);
 
-    std::unique_ptr<TcpServer> tsvr(new TcpServer(port));
+    std::unique_ptr<CalServer> tsvr(new CalServer(port));
     tsvr->initServer();
     // DaemonSelf();
     tsvr->start(cal);

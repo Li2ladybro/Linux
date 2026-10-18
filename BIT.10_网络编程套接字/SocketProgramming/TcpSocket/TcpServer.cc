@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     }
     uint16_t port = atoi(argv[1]);
 
-    std::unique_ptr<TcpServer> tsvr(new TcpServer(port));
+    std::unique_ptr<CalServer> tsvr(new CalServer(port));
     tsvr->initServer();
     DaemonSelf();
     tsvr->start();

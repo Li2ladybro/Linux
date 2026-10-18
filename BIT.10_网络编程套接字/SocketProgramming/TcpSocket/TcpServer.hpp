@@ -26,10 +26,10 @@ namespace Server
     using namespace std;
     static const uint16_t gport = 8080;
     static const int gbacklog = 5;
-    class TcpServer;
+    class CalServer;
     struct ThreadData
     {
-        TcpServer *_self;
+        CalServer *_self;
         int _sock;
     };
 
@@ -43,10 +43,10 @@ namespace Server
 
     typedef function<void(int, string, uint16_t, string)> func_t;
 
-    class TcpServer
+    class CalServer
     {
     public:
-        TcpServer(const u_int16_t &port = gport)
+        CalServer(const u_int16_t &port = gport)
             : _port(port), _listenSockfd(-1)
         {
         }
@@ -69,7 +69,7 @@ namespace Server
             bzero(&local, sizeof local);
 
             local.sin_family = AF_INET;
-            // port和ip需要发给对方
+            // port 和 ip 需要发给对方
             // 服务器需要明确端口号，不可以随意发生变化
             local.sin_port = htons(_port); // 主机转网络序列
             local.sin_addr.s_addr = INADDR_ANY;
@@ -194,7 +194,7 @@ namespace Server
         //     return nullptr;
         // }
 
-        ~TcpServer()
+        ~CalServer()
         {
         }
 

@@ -40,37 +40,65 @@ namespace Server
     // 保证解耦
     void HandleEnter(int sock, func_t func)
     {
-        // 1、读取
-        // 1.1、你怎麽保证你读到的消息是【一个】完整的请求
+        string inbuffer;
 
-        string req_str;
-
-        // 2、反序列化
-        // 2.1、得到一个结构化的请求对象
-        Request req;
-
-        if (req.deserialize(req_str) == false)
+        while (true)
         {
-            return;
+            // 1、读取："textlen/r/nx op y/r/n"
+            // 1.1、你怎麽保证你读到的消息是【一个】完整的请求，这个请求是序列化的字符串
+            string encrypted_text;
+            if (ReceivePackage(sock, inbuffer, &encrypted_text) == false)
+            {
+                // 未收到数据
+                return;
+            }
+            std::cout << "带包头的报文: \n"
+                      << encrypted_text << std::endl;
+            // req_text -> "textlen/r/nx op y/r/n"
+
+            // 1.2、解密
+            // "x op y"
+            string decrypted_str = DecryptText(encrypted_text);
+            std::cout << "去掉包头的报文: \n"
+                      << decrypted_str << std::endl;
+
+            // 2、反序列化
+            // 2.1、得到一个结构化的请求对象
+            Request structured_req;
+
+            if (structured_req.deserialize(decrypted_str) == false)
+            {
+                return;
+            }
+
+            // 3、计算机处理，这块是真的业务逻辑
+            // 3.1、得到一个结构化的响应
+            Response structured_resp;
+            func(structured_req, structured_resp);
+
+            // 4、对响应 Response，进行序列化
+            // 4.1、得到一个字符串
+            string serialize_resp_str;
+            structured_resp.serialize(&serialize_resp_str);
+
+            std::cout << "计算完成的序列化响应: \n"
+                      << serialize_resp_str << std::endl;
+
+            // 5、发送响应结果
+            // 对 text 加密
+            string send_encrypted_str = EncryptText(serialize_resp_str);
+
+            std::cout << "构建完成的完整响应: \n"
+                      << send_encrypted_str << std::endl;
+
+            send(sock, send_encrypted_str.c_str(), send_encrypted_str.size(), 0);
         }
-
-        // 3、计算机处理，这块是真的业务逻辑
-        // 3.1、得到一个结构化的响应
-        Response resp;
-        func(req, resp);
-
-        // 4、对响应 Response，进行序列化
-        // 4.1、得到一个字符串
-        string resp_str;
-        resp.serialize(&resp_str);
-
-        // 5、发送响应结果
     }
 
-    class TcpServer
+    class CalServer
     {
     public:
-        TcpServer(const u_int16_t &port = gport)
+        CalServer(const u_int16_t &port = gport)
             : _port(port), _listenSockfd(-1)
         {
         }
@@ -165,7 +193,7 @@ namespace Server
             }
         }
 
-        ~TcpServer()
+        ~CalServer()
         {
         }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "protocol.hpp"
+
 #include <iostream>
 #include <string>
 
@@ -24,10 +26,10 @@ namespace Client
         BIND_ERR
     };
 
-    class TcpClient
+    class CalClient
     {
     public:
-        TcpClient(const string &serverip, const uint16_t &serverport)
+        CalClient(const string &serverip, const uint16_t &serverport)
             : _serverip(serverip), _serverport(serverport), _sockfd(-1)
         {
         }
@@ -69,32 +71,43 @@ namespace Client
             else
             {
                 string message;
-                char buffer[1024];
-                cout<<"Client _sockfd: "+to_string(_sockfd)<<endl;
                 while (true)
                 {
-                    cout << "Please Enter# ";
-                    getline(cin, message);
+                    cout << "Please Enter# \n";
+                    getline(cin, message); // 1 + 1
 
-                    write(_sockfd, message.c_str(), message.size());
+                    Request request(1, '+', 1);
 
-                    int n = read(_sockfd, buffer, sizeof buffer - 1);
-                    if (n > 0)
-                    {
-                        buffer[n] = 0;
-                        cout << "Server 回显# " << buffer << endl;
-                    }
-                    else
-                    {
-                        break;
-                    }
+                    // 对请求进行序列化
+                    string request_serialize_str;
+                    request.serialize(&request_serialize_str);
+                    // std::cout<<request_serialize_str<<std::endl;
+                    std::cout << "请求序列化#:\n"
+                              << request_serialize_str;
+
+                    std::string send_encrypted_str = EncryptText(request_serialize_str);
+                    std::cout << "对请求序列化加密#\n"
+                              << send_encrypted_str << std::endl;
+
+                    // 发送加密的序列化数据
+                    send(_sockfd, send_encrypted_str.c_str(), send_encrypted_str.size(), 0);
+
+                    string inbuffer, reponse_package;
+                    Response reponse;
+
+                    // reponse_package -> "textlen/r/n_exit_code _result/r/n"
+                    ReceivePackage(_sockfd, inbuffer, &reponse_package);
+                    // 解包
+                    string decrypted_package = DecryptText(reponse_package);
+                    reponse.deserialize(decrypted_package);
+                    cout << "exit_code：" << reponse._exit_code << "result：" << reponse._result << endl;
                 }
             }
         }
 
-        ~TcpClient()
+        ~CalClient()
         {
-            if(_sockfd>=0)
+            if (_sockfd >= 0)
             {
                 close(_sockfd);
             }

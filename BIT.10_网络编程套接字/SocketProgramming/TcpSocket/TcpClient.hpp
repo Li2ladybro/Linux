@@ -24,10 +24,10 @@ namespace Client
         BIND_ERR
     };
 
-    class TcpClient
+    class CalClient
     {
     public:
-        TcpClient(const string &serverip, const uint16_t &serverport)
+        CalClient(const string &serverip, const uint16_t &serverport)
             : _serverip(serverip), _serverport(serverport), _sockfd(-1)
         {
         }
@@ -92,7 +92,7 @@ namespace Client
             }
         }
 
-        ~TcpClient()
+        ~CalClient()
         {
             if(_sockfd>=0)
             {

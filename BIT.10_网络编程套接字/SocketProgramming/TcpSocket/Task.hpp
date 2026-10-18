@@ -10,7 +10,6 @@
 #include <string>
 #include <functional>
 
-
 void serviceIO(int sock)
 {
     char buffer[1024];

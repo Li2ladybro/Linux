@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 
     string serverip = argv[1];
     uint16_t serverport = atoi(argv[2]);
-    unique_ptr<TcpClient> ucli(new TcpClient(serverip, serverport));
+    unique_ptr<CalClient> ucli(new CalClient(serverip, serverport));
     ucli->initClient();
     ucli->start();
     return 0;

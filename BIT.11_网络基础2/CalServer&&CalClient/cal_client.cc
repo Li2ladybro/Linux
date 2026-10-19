@@ -1,4 +1,5 @@
 #include "cal_client.hpp"
+
 #include <memory>
 
 using namespace Client;

@@ -3,6 +3,9 @@
 #include "log.hpp"
 #include "protocol.hpp"
 
+#include <cerrno>
+#include <cstring>
+
 #include <iostream>
 #include <string>
 #include <functional>
@@ -10,9 +13,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
-#include <cerrno>
-#include <cstring>
 
 #include <sys/wait.h>
 #include <unistd.h>

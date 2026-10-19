@@ -3,17 +3,19 @@
 #include <cstring>
 #include <cassert>
 
+#include <sys/socket.h>
+
 #include <iostream>
 #include <string>
 
-#include <sys/socket.h>
+#include <jsoncpp/json/json.h>
 
 enum
 {
     OK = 0,
-    DIVZERO,
-    MODZERO,
-    OPERROR
+    DIVZERO, // 除0️错误
+    MODZERO, // 模零错误
+    OPERROR  // 操作符错误
 };
 
 #define SEP " "
@@ -22,55 +24,59 @@ enum
 #define LINE_SEP "\r\n"
 #define LINE_SEP_LEN strlen(LINE_SEP)
 
-/****************************************************************
+/*
+ ****************************************************************
  * **************************************************************
  * 协议定制*
  * **************************************************************
- * *************************************************************/
+ * **************************************************************
+ */
 
-bool ReceivePackage(int sock, std::string inbuffer, std::string *req_text)
+// 收包
+//  "textlen/r/nx op y/r/n" or "textlen/r/n_exit_code _result/r/n"
+bool ReceivePackage(int sock, std::string &inbuffer, std::string *req_text)
 {
-
-    std::cout << "34#"
-              << inbuffer << "hvuvvhv\n";
 
     // "textlen/r/nx op y/r/n""textlen/r/nx op y/r/n""textlen/r/nx op y/r/n""textlen/r/nx op y/r/n""textlen/r/nx op y/r/n"
     char buffer[1024];
     while (true)
     {
-        ssize_t n = recv(sock, buffer, sizeof buffer - 1, 0);
-        if (n < 0)
+        ssize_t n = recv(sock, buffer, (sizeof buffer) - 1, 0);
+        if (n <= 0)
         {
             // 无数据
             return false;
         }
+
         buffer[n] = 0;
         inbuffer += buffer;
-        std::cout << "47#"
-                  << inbuffer << "hvuvvhv\n";
+
         auto sep_pos = inbuffer.find(LINE_SEP);
         if (sep_pos == std::string::npos)
         {
             continue;
         }
+
         // 一定可以知道该报文的长度
         std::string textlen = inbuffer.substr(0, sep_pos);
         int a_text_size = textlen.size() + 2 * LINE_SEP_LEN + stoi(textlen);
-        if (inbuffer.size() > a_text_size)
+
+        if (inbuffer.size() < a_text_size)
         {
-            std::cout << "处理前#inbuffer:\n " << inbuffer << std::endl;
+            continue;
+        }
+        else
+        {
+            std::cout << "处理前#inbuffer:\n"
+                      << inbuffer << std::endl;
             // 至少可以读取到一个完整的报文
             std::string test = inbuffer.substr(0, a_text_size);
             *req_text = test;
             inbuffer.erase(0, a_text_size);
-            std::cout << "处理后#inbuffer: \n"
+            std::cout << "处理后#inbuffer:\n"
                       << inbuffer << std::endl;
 
             return true;
-        }
-        else
-        {
-            continue;
         }
     }
 }
@@ -126,6 +132,9 @@ public:
     // 序列化
     bool serialize(std::string *out)
     {
+#ifdef MYSELF
+
+        // 1、自己写
         std::string serialized_str;
         // Request 结构化 -》"x op y"
         std::string x_string = std::to_string(_x);
@@ -138,12 +147,25 @@ public:
         serialized_str += y_string;
         *out = serialized_str;
 
+#else
+        // 2、用现成的
+        Json::Value root;
+        root["x"] = _x;
+        root["op"] = _op;
+        root["y"] = _y;
+
+        Json::FastWriter writer;
+        *out = writer.write(root);
+
+#endif
         return out;
     }
 
     // 反序列化
     bool deserialize(const std::string &in)
     {
+#ifdef MYSELF
+
         // "x op y" -》结构化
         auto left = in.find(SEP);
         auto right = in.rfind(SEP);
@@ -168,7 +190,16 @@ public:
 
         _x = stoi(x_string);
         _y = stoi(y_string);
+#else
+        Json::Value root;
+        Json::Reader reader;
+        reader.parse(in, root);
 
+        _x = root["x"].asInt();
+        _op = root["op"].asInt();
+        _y = root["y"].asInt();
+
+#endif
         return true;
     }
 
@@ -195,6 +226,8 @@ public:
     // 序列化
     bool serialize(std::string *out)
     {
+#ifdef MYSELF
+
         // Response -> "_exit_code _result"
 
         std::string ec_string = std::to_string(_exit_code);
@@ -202,11 +235,23 @@ public:
         *out = ec_string;
         *out += SEP;
         *out += res_string;
+#else
+        // 2、用现成的
+        Json::Value root;
+        root["exit_code"] = _exit_code;
+        root["result"] = _result;
+
+        Json::FastWriter writer;
+        *out = writer.write(root);
+#endif
         return true;
     }
+
     // 反序列化
     bool deserialize(const std::string &in)
     {
+#ifdef MYSELF
+
         // "_exit_code _result" -> Response
 
         auto mid = in.find(SEP);
@@ -222,6 +267,15 @@ public:
         }
         _exit_code = stoi(exit_code);
         _result = stoi(result);
+#else
+        Json::Value root;
+        Json::Reader reader;
+        reader.parse(in, root);
+
+        _exit_code = root["exit_code"].asInt();
+        _result = root["result"].asInt();
+
+#endif
         return true;
     }
 

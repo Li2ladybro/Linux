@@ -2,18 +2,18 @@
 
 #include "protocol.hpp"
 
-#include <iostream>
-#include <string>
-
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-
 #include <cerrno>
 #include <cstring>
 
 #include <unistd.h>
 #include <strings.h>
+
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+#include <iostream>
+#include <string>
 
 namespace Client
 {
@@ -76,8 +76,8 @@ namespace Client
                     cout << "Please Enter# \n";
                     getline(cin, message); // 1 + 1
 
-                    Request request(1, '+', 1);
-
+                    Request request = ParseMEssage(message);
+                    std::cout << request._x << " " << request._op << " " << request._y << " " << std::endl;
                     // 对请求进行序列化
                     string request_serialize_str;
                     request.serialize(&request_serialize_str);
@@ -96,13 +96,56 @@ namespace Client
                     Response reponse;
 
                     // reponse_package -> "textlen/r/n_exit_code _result/r/n"
-                    ReceivePackage(_sockfd, inbuffer, &reponse_package);
+                    if (ReceivePackage(_sockfd, inbuffer, &reponse_package) == false)
+                    {
+                        std::cout << "未接收到报文\n";
+                        continue;
+                    }
                     // 解包
                     string decrypted_package = DecryptText(reponse_package);
                     reponse.deserialize(decrypted_package);
-                    cout << "exit_code：" << reponse._exit_code << "result：" << reponse._result << endl;
+                    cout << "exit_code：" << reponse._exit_code << " " << "result：" << reponse._result << endl;
                 }
             }
+        }
+
+        Request ParseMEssage(const std::string message)
+        {
+            // message -> 1+1
+            int status = 0, cnt = message.size(), i = 0;
+            std::string left, right;
+            char op;
+            while (i < cnt)
+            {
+                switch (status)
+                {
+                case 0:
+                    // 操作符之前
+                    if (std::isdigit(message[i]) == true)
+                    {
+                        left += message[i++];
+                    }
+                    else
+                    {
+                        status = 1;
+                    }
+                    break;
+
+                case 1:
+                    op = message[i++];
+                    status = 2;
+                    break;
+
+                case 2:
+                    if (std::isdigit(message[i]) == true)
+                    {
+                        right += message[i++];
+                    }
+                    break;
+                }
+            }
+
+            return Request(std::stoi(left), op, std::stoi(right));
         }
 
         ~CalClient()

@@ -14,6 +14,7 @@ static void Usage(string proc)
 // resp：根据req，进行业务处理，填充resp，不需要管任何读取和写入，序列化、反序列化等细节
 bool cal(const Request &req, Response &resp)
 {
+    // 应用层，业务逻辑处理
     resp._exit_code = OK;
     resp._result = OK;
     switch (req._op)

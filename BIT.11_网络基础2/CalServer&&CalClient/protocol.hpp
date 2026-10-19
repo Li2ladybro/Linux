@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-#include <jsoncpp/json/json.h>
+#include <jsoncpp/json/json.h> // 表示层：json,protbuf
 
 enum
 {

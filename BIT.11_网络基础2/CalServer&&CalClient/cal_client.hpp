@@ -85,14 +85,14 @@ namespace Client
                     std::cout << "请求序列化#:\n"
                               << request_serialize_str;
 
-                    std::string send_encrypted_str = EncryptText(request_serialize_str);
+                    std::string send_encrypted_str = EncryptText(request_serialize_str); // 客户端发送缓冲区
                     std::cout << "对请求序列化加密#\n"
                               << send_encrypted_str << std::endl;
 
                     // 发送加密的序列化数据
                     send(_sockfd, send_encrypted_str.c_str(), send_encrypted_str.size(), 0);
 
-                    string inbuffer, reponse_package;
+                    string inbuffer, reponse_package; // 客户端接收冲区
                     Response reponse;
 
                     // reponse_package -> "textlen/r/n_exit_code _result/r/n"

@@ -40,6 +40,7 @@ namespace Server
     // 保证解耦
     void HandleEnter(int sock, func_t func)
     {
+        // 服务端接收缓冲区
         string inbuffer;
 
         while (true)
@@ -86,7 +87,7 @@ namespace Server
 
             // 5、发送响应结果
             // 对 text 加密
-            string send_encrypted_str = EncryptText(serialize_resp_str);
+            string send_encrypted_str = EncryptText(serialize_resp_str); // 服务端发送缓冲区
 
             std::cout << "构建完成的完整响应: \n"
                       << send_encrypted_str << std::endl;
@@ -173,12 +174,15 @@ namespace Server
 
                 logMessage(NORMAL, "Accept A New Link Success Get A New Sock : %d", sock);
 
+                // 会话层
+
                 // demo2 多进程（2）
                 pid_t id = fork();
                 if (id == 0)
                 {
                     // 子进程
                     close(_listenSockfd);
+                    // 表示层
                     HandleEnter(sock, func);
                     close(sock);
                     exit(0);

@@ -8,6 +8,8 @@
 
 const std::string KSep_Line = "\r\n";
 const std::string KDefault_Path = "./wwwwork";
+const std::string KHome_Page = "index.html";
+const std::string K404_Page = "./wwwwork/404.html";
 
 class HttpRequest
 {
@@ -17,7 +19,8 @@ public:
     // std::vector<std::string> reheader;
     // std::string body;
     void parse()
-    { // XXXX XXX XXX \r\n
+    {
+        // XXXX XXX XXX \r\n
 
         // 1、获取第一行
         std::string first_line_str = Util::GetFirstline(inbufer, KSep_Line);
@@ -34,15 +37,31 @@ public:
         // 3、 工作路径
         path = KDefault_Path;
         path += url;
+        // ./wwwwork/
+        if (path[path.size() - 1] == '/')
+        {
+            path += KHome_Page;
+        }
+
+        // 4、后缀
+        auto pos = path.rfind('.');
+        if (pos == std::string::npos)
+        {       
+            suffix = "";
+        }
+        else
+        {
+            suffix = path.substr(pos);
+        }
     }
 
-    std::string method;
-    std::string url;
-    std::string httpversion;
+    std::string method;// 请求方法
+    std::string url;// 请求地址
+    std::string httpversion;// 版本号
 
-    std::string path;
+    std::string path;// 完整的工作路径
+    std::string suffix;//   文件后缀
 
-    
     std::string inbufer; // 存储请求
 };
 

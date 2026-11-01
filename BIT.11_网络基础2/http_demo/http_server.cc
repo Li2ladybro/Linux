@@ -23,13 +23,24 @@ bool LogicHander(HttpRequest &req, HttpResponse &resp)
     cout << "<req.method：" << req.method << endl;
     cout << "<req.url：" << req.url << endl;
     cout << "<req.httpversion：" << req.httpversion << endl;
+    cout << "<req.path：" << req.path << endl;
+    cout << "<req.suffix：" << req.suffix << endl;
 
     cout << "-----------------end-----------------\n";
 
     string respline = "HTTP/1.1 200 OK\r\n";
-    string respheader = "Content-Type:text/html\r\n";
+
+    string respheader = Util::SuffixToHeaderType(req.suffix);
+
     string resblank = "\r\n";
-    string boby = "Hello Word";
+    // string boby = "Hello Word";
+
+    string boby;
+
+    if (false == Util::ReadFile(req.path, &boby))
+    {
+        Util::ReadFile(K404_Page, &boby);
+    }
 
     resp.outbuffer = respline;
     resp.outbuffer += respheader;

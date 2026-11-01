@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     }
     uint16_t port = atoi(argv[1]);
 
-    std::unique_ptr<CalServer> tsvr(new CalServer(port));
+    std::unique_ptr<HttpServer> tsvr(new HttpServer(port));
     tsvr->initServer();
     // DaemonSelf();
     tsvr->start(cal);

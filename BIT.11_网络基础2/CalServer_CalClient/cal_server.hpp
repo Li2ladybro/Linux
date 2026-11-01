@@ -96,10 +96,10 @@ namespace Server
         }
     }
 
-    class CalServer
+    class HttpServer
     {
     public:
-        CalServer(const u_int16_t &port = gport)
+        HttpServer(const u_int16_t &port = gport)
             : _port(port), _listenSockfd(-1)
         {
         }
@@ -197,7 +197,7 @@ namespace Server
             }
         }
 
-        ~CalServer()
+        ~HttpServer()
         {
         }
 

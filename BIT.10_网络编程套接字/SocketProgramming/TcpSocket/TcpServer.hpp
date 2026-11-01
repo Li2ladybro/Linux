@@ -26,10 +26,10 @@ namespace Server
     using namespace std;
     static const uint16_t gport = 8080;
     static const int gbacklog = 5;
-    class CalServer;
+    class HttpServer;
     struct ThreadData
     {
-        CalServer *_self;
+        HttpServer *_self;
         int _sock;
     };
 
@@ -43,10 +43,10 @@ namespace Server
 
     typedef function<void(int, string, uint16_t, string)> func_t;
 
-    class CalServer
+    class HttpServer
     {
     public:
-        CalServer(const u_int16_t &port = gport)
+        HttpServer(const u_int16_t &port = gport)
             : _port(port), _listenSockfd(-1)
         {
         }
@@ -194,7 +194,7 @@ namespace Server
         //     return nullptr;
         // }
 
-        ~CalServer()
+        ~HttpServer()
         {
         }
 

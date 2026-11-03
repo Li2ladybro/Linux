@@ -2,6 +2,8 @@
 
 #include "util.hpp"
 
+#include <sys/stat.h>
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -36,6 +38,9 @@ public:
 
         // 3、 工作路径
         path = KDefault_Path;
+
+        // 先解码，再拼接
+        url = Util::UrlDecode(url);
         path += url;
         // ./wwwwork/
         if (path[path.size() - 1] == '/')
@@ -46,21 +51,33 @@ public:
         // 4、后缀
         auto pos = path.rfind('.');
         if (pos == std::string::npos)
-        {       
+        {
             suffix = "";
         }
         else
         {
             suffix = path.substr(pos);
         }
+
+        // 5、文件大小
+        struct stat state;
+        if (stat(path.c_str(), &state) == 0)
+        {
+            size = state.st_size;
+        }
+        else
+        {
+            size = -1;
+        }
     }
 
-    std::string method;// 请求方法
-    std::string url;// 请求地址
-    std::string httpversion;// 版本号
+    std::string method;      // 请求方法
+    std::string url;         // 请求地址
+    std::string httpversion; // 版本号
 
-    std::string path;// 完整的工作路径
-    std::string suffix;//   文件后缀
+    std::string path;   // 完整的工作路径
+    std::string suffix; // 文件后缀
+    int size;           // 文件大小
 
     std::string inbufer; // 存储请求
 };

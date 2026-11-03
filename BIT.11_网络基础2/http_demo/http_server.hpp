@@ -2,13 +2,6 @@
 
 #include "protocol.hpp"
 
-#include <cerrno>
-#include <cstring>
-
-#include <iostream>
-#include <string>
-#include <functional>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -17,9 +10,13 @@
 #include <unistd.h>
 #include <strings.h>
 
+#include <iostream>
+#include <string>
+#include <functional>
+#include <unordered_map>
+
 namespace Server
 {
-
     enum
     {
         UASGE_ERR = 1,
@@ -35,33 +32,11 @@ namespace Server
 
     using func_t = std::function<bool(HttpRequest &req, HttpResponse &resp)>;
 
-    // 保证解耦
-    void HandleEnter(int sock, func_t func)
-    {
-        // 1、获取请求
-        // 2、解包，反序列化
-        // 3、应用层业务逻辑处理
-        // 4、将响序列化
-        // 5、加密，回复响应
-        char inbuffer[4096];
-        HttpRequest req;
-        HttpResponse resp;
-
-        ssize_t n = recv(sock, inbuffer, sizeof inbuffer - 1, 0);
-        if (n > 0)
-        {
-            inbuffer[n] = 0;
-            req.inbufer = inbuffer;
-            func(req, resp);
-            send(sock, resp.outbuffer.c_str(), resp.outbuffer.size(), 0);
-        }
-    }
-
     class HttpServer
     {
     public:
-        HttpServer(const uint16_t port, func_t fun)
-            : _port(port), _listenSockfd(-1), _func(fun)
+        HttpServer(const uint16_t port, func_t func)
+            : _port(port), _listenSockfd(-1), _func(func)
         {
         }
 
@@ -100,6 +75,34 @@ namespace Server
             // UDP Server的预备工作完成
         }
 
+        // void RegisterCallBack(const std::string &serverName, func_t serve)
+        // {
+        //     _funcs.insert(std::make_pair(serverName, serve));
+        // }
+
+        // 保证解耦
+        void HandleEnter(int sock)
+        {
+            // 1、获取请求
+            // 2、解包，反序列化
+            // 3、应用层业务逻辑处理
+            // 4、将响序列化
+            // 5、加密，回复响应
+            char inbuffer[4096];
+            HttpRequest req;
+            HttpResponse resp;
+
+            ssize_t n = recv(sock, inbuffer, sizeof inbuffer - 1, 0);
+            if (n > 0)
+            {
+                inbuffer[n] = 0;
+                req.inbufer = inbuffer;
+                _func(req, resp);
+                // _funcs[req.path](req, resp);
+                send(sock, resp.outbuffer.c_str(), resp.outbuffer.size(), 0);
+            }
+        }
+
         void start()
         {
             // 服务器的本质是一个常驻内存的进程死循环
@@ -133,7 +136,7 @@ namespace Server
                         exit(0);
                     }
                     // 表示层
-                    HandleEnter(sock, _func);
+                    HandleEnter(sock);
                     close(sock);
                     exit(0);
                 }
@@ -152,7 +155,7 @@ namespace Server
         uint16_t _port;
 
         int _listenSockfd; // 不是用来通信的，只负责监听是否有新连接到来，并获取，相当于拉客的
-
-        func_t _func;
+        func_t _func;      // 业务逻辑处理函数
+                           // std::unordered_map<std::string, func_t> _funcs; // 不同的服务提供不同的处理函数
     };
 }
